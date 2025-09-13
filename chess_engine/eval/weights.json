@@ -1,0 +1,10 @@
+{
+  "material": 1.0,
+  "position": 1.0,
+  "king_safety": 1.0,
+  "pawn_structure": 1.0,
+  "mobility": 1.0,
+  "center_control": 1.0,
+  "development": 1.0,
+  "tempo": 1.0
+}

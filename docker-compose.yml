@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  chess-engine:
+    build: .
+    container_name: chess-engine
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+    command: python main.py uci
+    stdin_open: true
+    tty: true
+
+  chess-engine-play:
+    build: .
+    container_name: chess-engine-play
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+    command: python main.py play
+    stdin_open: true
+    tty: true
+
+  chess-engine-train:
+    build: .
+    container_name: chess-engine-train
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+    command: python main.py train --epochs 50
+    stdin_open: true
+    tty: true
