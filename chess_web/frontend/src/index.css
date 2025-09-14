@@ -1,0 +1,344 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* Chess font for piece symbols */
+@font-face {
+  font-family: "Chess Cases";
+  src: url("/fonts/chess-cases.woff2") format("woff2"),
+    url("/fonts/chess-cases.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Base styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+    @apply transition-colors duration-200;
+  }
+
+  * {
+    @apply border-gray-200 dark:border-gray-700;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
+  }
+}
+
+/* Component styles */
+@layer components {
+  /* Chess board styles */
+  .chess-board {
+    @apply grid grid-cols-8 gap-0 border-2 border-gray-800 dark:border-gray-200;
+    @apply shadow-board rounded-lg overflow-hidden;
+    width: 28rem;
+    height: 28rem;
+  }
+
+  .chess-square {
+    @apply relative flex items-center justify-center;
+    @apply transition-all duration-200 ease-in-out;
+    @apply cursor-pointer select-none;
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .chess-square.light {
+    @apply bg-board-light;
+  }
+
+  .chess-square.dark {
+    @apply bg-board-dark;
+  }
+
+  .chess-square.highlighted {
+    @apply bg-board-highlight;
+  }
+
+  .chess-square.selected {
+    @apply bg-board-selected;
+  }
+
+  .chess-square.legal-move {
+    @apply bg-board-legal;
+  }
+
+  .chess-square.in-check {
+    @apply bg-board-check animate-check-flash;
+  }
+
+  .chess-square:hover {
+    @apply brightness-110;
+  }
+
+  /* Chess piece styles */
+  .chess-piece {
+    @apply text-4xl font-chess leading-none;
+    @apply drop-shadow-piece transition-all duration-200;
+    @apply cursor-grab active:cursor-grabbing;
+    @apply hover:scale-110 hover:drop-shadow-piece-hover;
+  }
+
+  .chess-piece.dragging {
+    @apply scale-110 drop-shadow-piece-hover z-50;
+  }
+
+  .chess-piece.white {
+    @apply text-white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  }
+
+  .chess-piece.black {
+    @apply text-gray-900;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
+  }
+
+  /* Coordinate labels */
+  .coordinate-label {
+    @apply absolute text-xs font-semibold;
+    @apply text-gray-700 dark:text-gray-300;
+  }
+
+  .coordinate-label.file {
+    @apply bottom-1 right-1;
+  }
+
+  .coordinate-label.rank {
+    @apply top-1 left-1;
+  }
+
+  /* Move history styles */
+  .move-history {
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-lg;
+    @apply border border-gray-200 dark:border-gray-700;
+    @apply max-h-96 overflow-y-auto;
+  }
+
+  .move-item {
+    @apply px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700;
+    @apply cursor-pointer transition-colors duration-150;
+    @apply border-b border-gray-100 dark:border-gray-600 last:border-b-0;
+  }
+
+  .move-item.active {
+    @apply bg-primary-100 dark:bg-primary-900;
+  }
+
+  /* Analysis panel styles */
+  .analysis-panel {
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-lg;
+    @apply border border-gray-200 dark:border-gray-700;
+    @apply p-4 space-y-4;
+  }
+
+  .evaluation-bar {
+    @apply relative h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden;
+  }
+
+  .evaluation-fill {
+    @apply h-full transition-all duration-500 ease-out;
+  }
+
+  .evaluation-fill.winning {
+    @apply bg-eval-winning;
+  }
+
+  .evaluation-fill.advantage {
+    @apply bg-eval-advantage;
+  }
+
+  .evaluation-fill.equal {
+    @apply bg-eval-equal;
+  }
+
+  .evaluation-fill.disadvantage {
+    @apply bg-eval-disadvantage;
+  }
+
+  .evaluation-fill.losing {
+    @apply bg-eval-losing;
+  }
+
+  /* Button styles */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white;
+    @apply focus:ring-primary-500;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-900;
+    @apply dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100;
+    @apply focus:ring-gray-500;
+  }
+
+  .btn-success {
+    @apply bg-green-600 hover:bg-green-700 text-white;
+    @apply focus:ring-green-500;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white;
+    @apply focus:ring-red-500;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-lg;
+    @apply border border-gray-200 dark:border-gray-700;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-200 dark:border-gray-700;
+  }
+
+  .card-body {
+    @apply px-6 py-4;
+  }
+
+  .card-footer {
+    @apply px-6 py-4 border-t border-gray-200 dark:border-gray-700;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-gray-300;
+    @apply border-t-primary-600 w-6 h-6;
+  }
+
+  /* Tooltip styles */
+  .tooltip {
+    @apply absolute z-50 px-2 py-1 text-sm;
+    @apply bg-gray-900 text-white rounded shadow-lg;
+    @apply opacity-0 pointer-events-none transition-opacity duration-200;
+  }
+
+  .tooltip.show {
+    @apply opacity-100;
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  .text-shadow {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+
+  .glass-dark {
+    @apply bg-black/10 backdrop-blur-md border border-black/20;
+  }
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+.bounce-in {
+  animation: bounceIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .chess-board {
+    @apply shadow-none border border-black;
+  }
+
+  .chess-piece {
+    @apply text-black;
+    text-shadow: none;
+  }
+}

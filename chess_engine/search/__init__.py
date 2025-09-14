@@ -10,6 +10,6 @@ This module contains:
 
 from .minimax import MinimaxEngine
 from .quiescence import QuiescenceSearch
-from .transposition import TranspositionTable
+from .transposition import LRUTranspositionTable, TranspositionEntry
 
 __all__ = ['MinimaxEngine', 'QuiescenceSearch', 'TranspositionTable']

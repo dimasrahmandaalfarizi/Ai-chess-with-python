@@ -28,7 +28,8 @@ class MinimaxEngine:
         self.max_depth = max_depth
         self.time_limit = time_limit
         self.nodes_searched = 0
-        self.transposition_table = {}
+        from .transposition import LRUTranspositionTable
+        self.transposition_table = LRUTranspositionTable(max_size=1000000)
         self.killer_moves = {}  # Move ordering
         self.history_table = {}  # History heuristic
         self.evaluation_engine = EvaluationEngine()
@@ -110,17 +111,23 @@ class MinimaxEngine:
         
         self.nodes_searched += 1
         
+        # Get board hash for transposition table
+        board_hash = self._get_board_hash(board)
+        
         # Check for terminal positions
         if depth == 0:
-            return None, self._quiescence_search(board, alpha, beta, color, start_time)
+            score = self._quiescence_search(board, alpha, beta, color, start_time)
+            # Store in transposition table even for depth 0
+            from .transposition import TranspositionEntry, NodeType
+            entry = TranspositionEntry(0, score, NodeType.EXACT, None)
+            self.transposition_table.put(board_hash, entry)
+            return None, score
         
         # Check transposition table
-        board_hash = self._get_board_hash(board)
-        if board_hash in self.transposition_table:
-            entry = self.transposition_table[board_hash]
-            if entry['depth'] >= depth:
-                self.search_stats['transposition_hits'] += 1
-                return entry['move'], entry['score']
+        tt_entry = self.transposition_table.get(board_hash)
+        if tt_entry and tt_entry.depth >= depth:
+            self.search_stats['transposition_hits'] += 1
+            return tt_entry.best_move, tt_entry.score
         
         # Generate legal moves
         moves = self.move_generator.generate_legal_moves(color)
@@ -169,11 +176,10 @@ class MinimaxEngine:
                 break
         
         # Store in transposition table
-        self.transposition_table[board_hash] = {
-            'move': best_move,
-            'score': best_score,
-            'depth': depth
-        }
+        from .transposition import TranspositionEntry, NodeType
+        node_type = NodeType.EXACT  # Simplified - should determine based on alpha/beta bounds
+        entry = TranspositionEntry(depth, best_score, node_type, best_move)
+        self.transposition_table.put(board_hash, entry)
         
         return best_move, best_score
     
@@ -279,11 +285,10 @@ class MinimaxEngine:
         }
         return values.get(piece_type.name, 0)
     
-    def _get_board_hash(self, board: ChessBoard) -> str:
+    def _get_board_hash(self, board: ChessBoard) -> int:
         """Get board hash for transposition table"""
-        # TODO: Implement Zobrist hashing for better performance
-        # For now, use FEN as hash
-        return board._get_fen()
+        from .zobrist import zobrist
+        return zobrist.hash_position(board)
     
     def update_killer_moves(self, move: Move, color: Color):
         """Update killer moves for move ordering"""
@@ -313,5 +318,5 @@ class MinimaxEngine:
             'cutoffs': self.search_stats['cutoffs'],
             'transposition_hits': self.search_stats['transposition_hits'],
             'quiescence_nodes': self.search_stats['quiescence_nodes'],
-            'transposition_size': len(self.transposition_table)
+            'transposition_size': self.transposition_table.get_stats()['size']
         }

@@ -40,8 +40,15 @@ class MoveGenerator:
         # Filter out moves that would put own king in check
         legal_moves = []
         for move in moves:
-            if self._is_legal_move(move):
-                legal_moves.append(move)
+            # Create a copy of the board to test the move
+            board_copy = self.board.copy()
+            
+            # Try to make the move on the copy
+            if board_copy.make_move(move):
+                # Check if this move puts own king in check
+                if not board_copy.is_check(color):
+                    legal_moves.append(move)
+                board_copy.undo_move()
         
         return legal_moves
     
@@ -226,12 +233,69 @@ class MoveGenerator:
         moves = []
         file, rank = square
         
-        # TODO: Implement castling logic
-        # - Check if king and rook haven't moved
-        # - Check if squares between are empty
-        # - Check if king is not in check and doesn't pass through check
+        # King must be on starting square
+        if color == Color.WHITE and (file, rank) != (4, 7):
+            return moves
+        if color == Color.BLACK and (file, rank) != (4, 0):
+            return moves
+        
+        # King must not be in check
+        if self.board.is_check(color):
+            return moves
+        
+        # Check kingside castling
+        if color == Color.WHITE and self.board.castling_rights["K"]:
+            # Check if squares are empty
+            if (self.board.get_piece((5, 7)).empty and 
+                self.board.get_piece((6, 7)).empty):
+                # Check if king doesn't pass through check
+                temp_move1 = self._create_move(square, (5, 7), PieceType.KING, color)
+                temp_move2 = self._create_move(square, (6, 7), PieceType.KING, color)
+                
+                # Simulate moves to check for check
+                if self._is_square_safe_for_king((5, 7), color) and self._is_square_safe_for_king((6, 7), color):
+                    moves.append(self._create_move(square, (6, 7), PieceType.KING, color, is_castling=True))
+        
+        elif color == Color.BLACK and self.board.castling_rights["k"]:
+            # Check if squares are empty
+            if (self.board.get_piece((5, 0)).empty and 
+                self.board.get_piece((6, 0)).empty):
+                # Check if king doesn't pass through check
+                if self._is_square_safe_for_king((5, 0), color) and self._is_square_safe_for_king((6, 0), color):
+                    moves.append(self._create_move(square, (6, 0), PieceType.KING, color, is_castling=True))
+        
+        # Check queenside castling
+        if color == Color.WHITE and self.board.castling_rights["Q"]:
+            # Check if squares are empty
+            if (self.board.get_piece((1, 7)).empty and 
+                self.board.get_piece((2, 7)).empty and 
+                self.board.get_piece((3, 7)).empty):
+                # Check if king doesn't pass through check
+                if self._is_square_safe_for_king((2, 7), color) and self._is_square_safe_for_king((3, 7), color):
+                    moves.append(self._create_move(square, (2, 7), PieceType.KING, color, is_castling=True))
+        
+        elif color == Color.BLACK and self.board.castling_rights["q"]:
+            # Check if squares are empty
+            if (self.board.get_piece((1, 0)).empty and 
+                self.board.get_piece((2, 0)).empty and 
+                self.board.get_piece((3, 0)).empty):
+                # Check if king doesn't pass through check
+                if self._is_square_safe_for_king((2, 0), color) and self._is_square_safe_for_king((3, 0), color):
+                    moves.append(self._create_move(square, (2, 0), PieceType.KING, color, is_castling=True))
         
         return moves
+    
+    def _is_square_safe_for_king(self, square: Tuple[int, int], king_color: Color) -> bool:
+        """Check if a square is safe for the king (not attacked by opponent)"""
+        opponent_color = Color.BLACK if king_color == Color.WHITE else Color.WHITE
+        
+        for rank in range(8):
+            for file in range(8):
+                piece = self.board.get_piece((file, rank))
+                if piece and not piece.empty and piece.color == opponent_color:
+                    if self.board._can_piece_attack(piece.piece_type, (file, rank), square):
+                        return False
+        return True
     
     def _create_move(self, from_square: Tuple[int, int], to_square: Tuple[int, int], 
                     piece_type: PieceType, color: Color, promotion: Optional[PieceType] = None,
@@ -249,13 +313,21 @@ class MoveGenerator:
         Returns:
             True if move is legal, False otherwise
         """
-        # TODO: Implement move legality check
-        # - Make the move temporarily
-        # - Check if own king is in check
-        # - Undo the move
-        # - Return result
+        # Make the move temporarily
+        if not self.board.make_move(move):
+            return False
         
-        return True
+        # Check if own king is in check after the move
+        # Note: current_player has already switched in make_move
+        opponent_color = self.board.current_player
+        own_color = Color.BLACK if opponent_color == Color.WHITE else Color.WHITE
+        
+        is_legal = not self.board.is_check(own_color)
+        
+        # Undo the move
+        self.board.undo_move()
+        
+        return is_legal
     
     def order_moves(self, moves: List[Move]) -> List[Move]:
         """
